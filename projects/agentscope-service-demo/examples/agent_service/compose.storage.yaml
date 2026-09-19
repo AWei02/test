@@ -1,0 +1,64 @@
+services:
+  redis:
+    image: redis:7
+    container_name: agentscope-redis-demo
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${AGENTSCOPE_REDIS_PORT:-6379}:6379"
+    volumes:
+      - "${AGENTSCOPE_DATA_DIR:-/workspace/data/agentscope}/redis:/data"
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec", "--save", "900 1 300 10 60 10000"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Raw knowledge-base files and derived source assets.  This is an
+  # S3-compatible service, consumed by AgentScope's S3BlobStore.
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: agentscope-minio-demo
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}
+    command: server /data --console-address ":9001"
+    ports:
+      - "127.0.0.1:${MINIO_PORT:-9000}:9000"
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - "${AGENTSCOPE_DATA_DIR:-/workspace/data/agentscope}/minio:/data"
+
+  # Provision the bucket once and safely repeat it on later compose runs.
+  minio-init:
+    image: quay.io/minio/mc:latest
+    restart: "no"
+    depends_on:
+      minio:
+        condition: service_started
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}
+      MINIO_BUCKET: ${MINIO_BUCKET:-agentscope-knowledge}
+    entrypoint: >-
+      /bin/sh -c 'until mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}"; do sleep 2; done; mc mb --ignore-existing "local/$${MINIO_BUCKET}"'
+
+  # GraphRAG relation store.  It is isolated from Qdrant: vectors remain the
+  # source for semantic recall, while Neo4j holds explicit entity relations
+  # and source-chunk provenance.
+  neo4j:
+    image: neo4j:5-community
+    container_name: agentscope-neo4j-demo
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:?Set NEO4J_PASSWORD in .env}
+      NEO4J_server_memory_pagecache_size: 256M
+      NEO4J_server_memory_heap_initial__size: 256M
+      NEO4J_server_memory_heap_max__size: 512M
+    ports:
+      - "127.0.0.1:${NEO4J_HTTP_PORT:-7474}:7474"
+      - "127.0.0.1:${NEO4J_BOLT_PORT:-7687}:7687"
+    volumes:
+      - "${AGENTSCOPE_DATA_DIR:-/workspace/data/agentscope}/neo4j/data:/data"
+      - "${AGENTSCOPE_DATA_DIR:-/workspace/data/agentscope}/neo4j/logs:/logs"

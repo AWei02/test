@@ -1,0 +1,4 @@
+# Optional document-to-Markdown / visual PDF adapter dependencies.
+# MinerU inference belongs in its own environment, not this service venv.
+pypdfium2>=4,<6
+Pillow>=10

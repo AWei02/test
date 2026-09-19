@@ -1,0 +1,17 @@
+{
+  "architecture": "x86_64",
+  "python": "Python 3.12.14",
+  "node": "v24.21.0",
+  "pnpm": "12.4.1",
+  "git_commit": "4e7430e172e38efb031fefb2b32de98a761219d5",
+  "git_status": "",
+  "docker_images": [
+    "neo4j:5-community sha256:bb268a2f1b4f3c79e4bd1a00a82a6e63bbd4fcc4088da03c1b2380655f256cb2",
+    "portal-skill:acb107b19f6c44cab1c93eab933e1991 sha256:69f1b536a1cf7480590f3522813a7f72618cf80fe752e685980afe078fc5b0d0",
+    "portal-skill:547f0f40aacd4c2292e68a1e8fb11b9f sha256:22e35e99193df4524e258b29ea8d0f507e84930b20bc18fde62941d6487c005e",
+    "python:3.12-slim sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea",
+    "redis:7 sha256:71da9275c5f3fcb97d0fa0c8c5b36cc995327265420f17a04bfd544f458059f7",
+    "quay.io/minio/minio:latest sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e",
+    "quay.io/minio/mc:latest sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727"
+  ]
+}
