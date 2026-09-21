@@ -71,6 +71,7 @@ export function AdminPage() {
 	const [user, setUser] = useState<User>();
 	const [grant, setGrant] = useState<Grant>();
 	const [editingAgent, setEditingAgent] = useState<AgentView | null>(null);
+	const [deletingUser, setDeletingUser] = useState<User | null>(null);
 	const [deletingAgent, setDeletingAgent] = useState<AgentView | null>(null);
 	const { agents, refetch: refreshAgents, remove: removeAgent } = useAgents();
 	async function refresh() {
@@ -324,6 +325,15 @@ export function AdminPage() {
 																>
 																	分配权限
 																</Button>
+																{u.role !== '管理员' && (
+																	<Button
+																		variant="ghost"
+																		className="text-red-600 hover:text-red-700"
+																		onClick={() => setDeletingUser(u)}
+																	>
+																		删除
+																	</Button>
+																)}
 															</td>
 														</tr>
 													))}
@@ -706,6 +716,22 @@ export function AdminPage() {
 						</form>
 					</section>
 				</div>
+			)}
+			{deletingUser && (
+				<DeleteDialog
+					open
+					title={`确认删除用户“${deletingUser.username}”？`}
+					description="删除后，该用户将无法登录，个人访问授权和运行配置会一并清理。历史项目、聊天及审计记录保留；重新创建同名用户可能继续关联原数据。"
+					confirmLabel="确认删除用户"
+					onOpenChange={(open) => {
+						if (!open) setDeletingUser(null);
+					}}
+					onConfirm={async () => {
+						await portalWrite(`/portal/users/${encodeURIComponent(deletingUser.username)}`, 'DELETE');
+						await refresh();
+						toast.success('用户已删除');
+					}}
+				/>
 			)}
 			{deletingAgent && (
 				<DeleteDialog
